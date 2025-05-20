@@ -15,14 +15,23 @@ func resourceOpenNebulaVNET() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceOpenNebulaVNETCreate,
 		ReadContext:   resourceOpenNebulaVNETRead,
+		DeleteContext: resourceOpenNebulaVNETDelete,
 		Schema: map[string]*schema.Schema{
 			"name": {
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
+			},
+			"vnmad": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: true,
 			},
 			"vlan_id": {
-				Type:     schema.TypeInt,
-				Required: false,
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
 			},
 		},
 	}
@@ -35,10 +44,14 @@ func resourceOpenNebulaVNETCreate(ctx context.Context, d *schema.ResourceData, m
 	controller := config.Controller
 
 	vnname := d.Get("name").(string)
-	vlanid := d.Get("vlan_id")
+	vlanid := d.Get("vlan_id").(string)
+	vn_mad := d.Get("vnmad").(string)
+
 	tpl := vn.NewTemplate()
+
 	tpl.Add(vnk.Name, vnname)
-	tpl.Add(vnk.VlanID, vlanid.(string))
+	tpl.Add(vnk.VlanID, vlanid)
+	tpl.Add(vnk.VNMad, vn_mad)
 
 	vnetID, err := controller.VirtualNetworks().Create(tpl.String(), 100)
 	if err != nil {
@@ -49,14 +62,32 @@ func resourceOpenNebulaVNETCreate(ctx context.Context, d *schema.ResourceData, m
 		})
 		return diags
 	}
-	fmt.Print(vnetID)
+	d.SetId(fmt.Sprintf("%v", vnetID))
 
 	return resourceOpenNebulaVNETRead(ctx, d, meta)
 }
 
 func resourceOpenNebulaVNETRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	var diags diag.Diagnostics
 
-	// Use client to get VM info, update d.Set("name", ...)
+	config := meta.(*Configuration)
+	controller := config.Controller
+
+	vnetID := d.Id()
+
+	vnet, err := controller.VirtualNetworks().Info()
+	if err != nil {
+		// If not found, mark resource as removed
+		d.SetId("")
+		return nil
+	}
+	fmt.Print(vnet)
+	d.SetId(fmt.Sprintf("%v", vnetID))
+
+	return diags
+}
+
+func resourceOpenNebulaVNETDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 
 	return nil
 }

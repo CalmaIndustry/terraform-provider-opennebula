@@ -11,6 +11,5 @@ func main() {
 		ProviderFunc: func() *schema.Provider {
 			return opennebula.Provider()
 		},
-		ProviderAddr: "CalmaIndustry/opennebula",
 	})
 }
