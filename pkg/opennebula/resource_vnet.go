@@ -34,6 +34,12 @@ func resourceOpenNebulaVNET() *schema.Resource {
 				Computed: true,
 				ForceNew: true,
 			},
+			"physical_device": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+				ForceNew: true,
+			},
 		},
 	}
 }
@@ -47,12 +53,14 @@ func resourceOpenNebulaVNETCreate(ctx context.Context, d *schema.ResourceData, m
 	vnname := d.Get("name").(string)
 	vlanid := d.Get("vlan_id").(string)
 	vn_mad := d.Get("vnmad").(string)
+	physicaldevice := d.Get("physical_device").(string)
 
 	tpl := vn.NewTemplate()
 
 	tpl.Add(vnk.Name, vnname)
 	tpl.Add(vnk.VlanID, vlanid)
 	tpl.Add(vnk.VNMad, vn_mad)
+	tpl.Add(vnk.PhyDev, physicaldevice)
 
 	vnetID, err := controller.VirtualNetworks().Create(tpl.String(), 100)
 	if err != nil {
