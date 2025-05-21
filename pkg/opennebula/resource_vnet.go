@@ -3,6 +3,7 @@ package opennebula
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	vn "github.com/OpenNebula/one/src/oca/go/src/goca/schemas/virtualnetwork"
 	vnk "github.com/OpenNebula/one/src/oca/go/src/goca/schemas/virtualnetwork/keys"
@@ -88,6 +89,17 @@ func resourceOpenNebulaVNETRead(ctx context.Context, d *schema.ResourceData, met
 }
 
 func resourceOpenNebulaVNETDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+
+	config := meta.(*Configuration)
+	controller := config.Controller
+
+	imgID, err := strconv.ParseUint(d.Id(), 10, 0)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	vnc := controller.VirtualNetwork(int(imgID))
+	vnc.Delete()
 
 	return nil
 }
