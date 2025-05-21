@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/OpenNebula/one/src/oca/go/src/goca/parameters"
 	vn "github.com/OpenNebula/one/src/oca/go/src/goca/schemas/virtualnetwork"
 	vnk "github.com/OpenNebula/one/src/oca/go/src/goca/schemas/virtualnetwork/keys"
 
@@ -16,6 +17,7 @@ func resourceOpenNebulaVNET() *schema.Resource {
 	return &schema.Resource{
 		CreateContext: resourceOpenNebulaVNETCreate,
 		ReadContext:   resourceOpenNebulaVNETRead,
+		UpdateContext: resourceOpennebulaVirtualNetworkUpdate,
 		DeleteContext: resourceOpenNebulaVNETDelete,
 		Schema: map[string]*schema.Schema{
 			"name": {
@@ -38,7 +40,6 @@ func resourceOpenNebulaVNET() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
-				ForceNew: true,
 			},
 		},
 	}
@@ -94,6 +95,32 @@ func resourceOpenNebulaVNETRead(ctx context.Context, d *schema.ResourceData, met
 	d.SetId(fmt.Sprintf("%v", vnetID))
 
 	return diags
+}
+
+func resourceOpennebulaVirtualNetworkUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	config := meta.(*Configuration)
+	controller := config.Controller
+
+	imgID, err := strconv.ParseUint(d.Id(), 10, 0)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	vnc := controller.VirtualNetwork(int(imgID))
+
+	vnInfos, _ := vnc.Info(false)
+
+	tpl := vnInfos.Template
+
+	if d.HasChange("physical_device") {
+		tpl.Del(string(vnk.PhyDev))
+		physicaldevice := d.Get("physical_device").(string)
+		if len(physicaldevice) > 0 {
+			tpl.Add(vnk.PhyDev, physicaldevice)
+		}
+		vnc.Update(tpl.String(), parameters.Replace)
+	}
+	return nil
 }
 
 func resourceOpenNebulaVNETDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
