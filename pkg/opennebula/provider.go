@@ -32,6 +32,10 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"opennebula_vnet": resourceOpenNebulaVNET(),
 		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"opennebula_vnet": dataOpenNebulaVNET(),
+		},
+
 		ConfigureContextFunc: providerConfigure,
 	}
 }
